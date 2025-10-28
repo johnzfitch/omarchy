@@ -1,23 +1,39 @@
 #!/bin/bash
 
+# Get the default browser from xdg-settings
 default_browser=$(xdg-settings get default-web-browser)
 
-# Find the desktop file in multiple locations
-desktop_file=""
-for dir in ~/.local/share/applications ~/.nix-profile/share/applications /usr/share/applications /var/lib/flatpak/exports/share/applications; do
-  if [[ -f "$dir/$default_browser" ]]; then
-    desktop_file="$dir/$default_browser"
-    break
-  fi
-done
+# Respect XDG_DATA_HOME with fallback to $HOME/.local/share
+xdg_data_home="${XDG_DATA_HOME:-$HOME/.local/share}"
 
-if [[ -z "$desktop_file" ]]; then
+# Check if xdg-settings returned an absolute path or just a filename
+if [[ "$default_browser" == /* ]]; then
+  # Absolute path to .desktop file
+  desktop_file="$default_browser"
+else
+  # Desktop filename - search in XDG_DATA_HOME, Nix, system, and Flatpak directories
+  desktop_file=""
+  for dir in "$xdg_data_home/applications" \
+             ~/.nix-profile/share/applications \
+             /nix/var/nix/profiles/default/share/applications \
+             /usr/share/applications \
+             /usr/local/share/applications \
+             /var/lib/flatpak/exports/share/applications \
+             ~/.local/share/flatpak/exports/share/applications; do
+    if [[ -f "$dir/$default_browser" ]]; then
+      desktop_file="$dir/$default_browser"
+      break
+    fi
+  done
+fi
+
+if [[ -z "$desktop_file" ]] || [[ ! -f "$desktop_file" ]]; then
   notify-send "Browser Error" "Could not find $default_browser" -u critical
   exit 1
 fi
 
-# Extract full Exec line (handles flatpak multi-word commands)
-browser_exec=$(grep "^Exec=" "$desktop_file" | head -1 | sed 's/^Exec=//' | sed 's/ %[uUfF].*//' | sed 's/ @@.*//')
+# Extract Exec= line and strip ALL desktop fieldcodes (any %X pattern)
+browser_exec=$(grep "^Exec=" "$desktop_file" | head -1 | sed 's/^Exec=//' | sed 's/ %.//g' | sed 's/ @@.*//')
 
 # Determine browser type from desktop file name or exec
 if [[ $default_browser =~ (floorp|firefox|zen|librewolf) ]] || [[ $browser_exec =~ (floorp|firefox|zen|librewolf) ]]; then
