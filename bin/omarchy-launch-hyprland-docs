@@ -1,0 +1,12 @@
+#!/bin/bash
+# Omarchy-integrated Hyprland Documentation Browser
+# Uses walker's native theming and service
+
+# Ensure walker service is running
+if ! pgrep -f "walker --gapplication-service" > /dev/null; then
+  setsid uwsm-app -- walker --gapplication-service &
+  sleep 0.3
+fi
+
+# Launch walker in dmenu mode for Hyprland docs
+exec walker --dmenu -p "🔍 Search Hyprland Docs" --width 900 --maxheight 500 --minheight 300

@@ -1,12 +1,30 @@
 #!/bin/bash
 
 default_browser=$(xdg-settings get default-web-browser)
-browser_exec=$(sed -n 's/^Exec=\([^ ]*\).*/\1/p' {~/.local,~/.nix-profile,/usr}/share/applications/$default_browser 2>/dev/null | head -1)
 
-if [[ $browser_exec =~ (firefox|zen|librewolf) ]]; then
+# Find the desktop file in multiple locations
+desktop_file=""
+for dir in ~/.local/share/applications ~/.nix-profile/share/applications /usr/share/applications /var/lib/flatpak/exports/share/applications; do
+  if [[ -f "$dir/$default_browser" ]]; then
+    desktop_file="$dir/$default_browser"
+    break
+  fi
+done
+
+if [[ -z "$desktop_file" ]]; then
+  notify-send "Browser Error" "Could not find $default_browser" -u critical
+  exit 1
+fi
+
+# Extract full Exec line (handles flatpak multi-word commands)
+browser_exec=$(grep "^Exec=" "$desktop_file" | head -1 | sed 's/^Exec=//' | sed 's/ %[uUfF].*//' | sed 's/ @@.*//')
+
+# Determine browser type from desktop file name or exec
+if [[ $default_browser =~ (floorp|firefox|zen|librewolf) ]] || [[ $browser_exec =~ (floorp|firefox|zen|librewolf) ]]; then
   private_flag="--private-window"
 else
   private_flag="--incognito"
 fi
 
-exec setsid uwsm-app -- "$browser_exec" "${@/--private/$private_flag}"
+# Replace --private with appropriate flag and launch
+exec setsid uwsm-app -- $browser_exec "${@/--private/$private_flag}"
