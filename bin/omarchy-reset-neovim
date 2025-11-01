@@ -1,0 +1,270 @@
+#!/usr/bin/env bash
+# Reset Neovim to minimal omarchy configuration
+# Part of Omarchy - https://omarchy.org
+
+set -euo pipefail
+
+BACKUP_DIR="$HOME/.config/nvim-backup-$(date +%Y%m%d-%H%M%S)"
+CUSTOM_BACKUP_DIR="$HOME/.config/nvim-backup-custom"
+
+echo "🔄 Omarchy Neovim Reset Script"
+echo "================================"
+echo ""
+
+# Backup current config
+if [ -d "$HOME/.config/nvim" ]; then
+  echo "📦 Backing up current config to: $BACKUP_DIR"
+  cp -r "$HOME/.config/nvim" "$BACKUP_DIR"
+
+  echo "📝 Backing up custom configs to: $CUSTOM_BACKUP_DIR"
+  mkdir -p "$CUSTOM_BACKUP_DIR"
+  [ -f "$HOME/.config/nvim/lua/config/keymaps.lua" ] && cp "$HOME/.config/nvim/lua/config/keymaps.lua" "$CUSTOM_BACKUP_DIR/"
+  [ -f "$HOME/.config/nvim/lua/config/options.lua" ] && cp "$HOME/.config/nvim/lua/config/options.lua" "$CUSTOM_BACKUP_DIR/"
+  [ -f "$HOME/.config/nvim/lua/config/autocmds.lua" ] && cp "$HOME/.config/nvim/lua/config/autocmds.lua" "$CUSTOM_BACKUP_DIR/"
+fi
+
+# Clean slate
+echo "🧹 Cleaning old config..."
+rm -rf "$HOME/.config/nvim"
+rm -rf "$HOME/.local/share/nvim"
+rm -rf "$HOME/.local/state/nvim"
+
+# Create fresh structure
+echo "📁 Creating fresh structure..."
+mkdir -p "$HOME/.config/nvim/lua/"{config,plugins}
+
+# Create init.lua
+cat > "$HOME/.config/nvim/init.lua" << 'EOF'
+-- Minimal omarchy LazyVim configuration
+require("config.lazy")
+EOF
+
+# Create lazy.lua
+cat > "$HOME/.config/nvim/lua/config/lazy.lua" << 'EOF'
+-- Bootstrap lazy.nvim
+local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+if not (vim.uv or vim.loop).fs_stat(lazypath) then
+  local lazyrepo = "https://github.com/folke/lazy.nvim.git"
+  local out = vim.fn.system({ "git", "clone", "--filter=blob:none", "--branch=stable", lazyrepo, lazypath })
+  if vim.v.shell_error ~= 0 then
+    vim.api.nvim_echo({
+      { "Failed to clone lazy.nvim:\n", "ErrorMsg" },
+      { out, "WarningMsg" },
+      { "\nPress any key to exit..." },
+    }, true, {})
+    vim.fn.getchar()
+    os.exit(1)
+  end
+end
+vim.opt.rtp:prepend(lazypath)
+
+-- Setup lazy.nvim
+require("lazy").setup({
+  spec = {
+    { "LazyVim/LazyVim", import = "lazyvim.plugins" },
+    { import = "plugins" },
+  },
+  defaults = { lazy = false, version = false },
+  install = { colorscheme = { "flexoki-dark", "tokyonight" } },
+  checker = { enabled = false },
+  performance = {
+    rtp = {
+      disabled_plugins = { "gzip", "tarPlugin", "tohtml", "tutor", "zipPlugin" },
+    },
+  },
+})
+EOF
+
+# Create options.lua
+cat > "$HOME/.config/nvim/lua/config/options.lua" << 'EOF'
+-- Options
+vim.g.mapleader = " "
+vim.g.maplocalleader = "\\"
+
+vim.opt.relativenumber = false
+vim.opt.wrap = true
+vim.opt.linebreak = true
+vim.opt.breakindent = true
+vim.opt.showbreak = "↪ "
+vim.opt.breakindentopt = "shift:2,min:40,sbr"
+vim.opt.list = false
+EOF
+
+# Create keymaps.lua
+cat > "$HOME/.config/nvim/lua/config/keymaps.lua" << 'EOF'
+-- Essential keymaps
+
+-- Save all with Ctrl+S
+vim.keymap.set({ "i", "x", "n", "s" }, "<C-s>", "<cmd>wa<cr><esc>", { desc = "Save All" })
+
+-- Select all with Ctrl+A
+vim.keymap.set("n", "<C-a>", "ggVG", { desc = "Select All" })
+
+-- System clipboard
+vim.keymap.set("v", "<C-c>", '"+y', { desc = "Copy" })
+vim.keymap.set("i", "<C-v>", '<C-r>+', { desc = "Paste" })
+
+-- Toggle buffer modifiable
+vim.keymap.set("n", "<leader>bm", function()
+  vim.bo.modifiable = not vim.bo.modifiable
+  vim.notify("Buffer " .. (vim.bo.modifiable and "modifiable" or "not modifiable"))
+end, { desc = "Toggle Modifiable" })
+
+-- Word wrap navigation
+vim.keymap.set({ "n", "x" }, "j", "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true })
+vim.keymap.set({ "n", "x" }, "k", "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = true })
+
+-- Toggle word wrap
+vim.keymap.set("n", "<leader>uw", function()
+  vim.wo.wrap = not vim.wo.wrap
+  vim.notify("Word wrap " .. (vim.wo.wrap and "enabled" or "disabled"))
+end, { desc = "Toggle Wrap" })
+
+-- Toggle whitespace
+vim.keymap.set("n", "<leader>ul", function()
+  vim.wo.list = not vim.wo.list
+  vim.notify("Whitespace " .. (vim.wo.list and "visible" or "hidden"))
+end, { desc = "Toggle Whitespace" })
+EOF
+
+# Create autocmds.lua
+cat > "$HOME/.config/nvim/lua/config/autocmds.lua" << 'EOF'
+-- Autocmds (empty - LazyVim handles most)
+EOF
+
+# Create theme.lua
+cat > "$HOME/.config/nvim/lua/plugins/theme.lua" << 'EOF'
+return {
+  { "kepano/flexoki-neovim", name = "flexoki" },
+  {
+    "LazyVim/LazyVim",
+    opts = {
+      colorscheme = "flexoki-dark",
+      news = { lazyvim = false, neovim = false },
+    },
+  },
+}
+EOF
+
+# Create transparency.lua
+cat > "$HOME/.config/nvim/lua/plugins/transparency.lua" << 'EOF'
+return {
+  {
+    "kepano/flexoki-neovim",
+    opts = function()
+      vim.api.nvim_create_autocmd("ColorScheme", {
+        callback = function()
+          local hl_groups = {
+            "Normal", "NormalFloat", "FloatBorder", "Pmenu",
+            "Terminal", "EndOfBuffer", "FoldColumn", "Folded",
+            "SignColumn", "NormalNC",
+          }
+          for _, group in ipairs(hl_groups) do
+            vim.api.nvim_set_hl(0, group, { bg = "none" })
+          end
+        end,
+      })
+    end,
+  },
+}
+EOF
+
+# Create completion.lua
+cat > "$HOME/.config/nvim/lua/plugins/completion.lua" << 'EOF'
+return {
+  {
+    "hrsh7th/nvim-cmp",
+    opts = function(_, opts)
+      local cmp = require("cmp")
+      opts.preselect = cmp.PreselectMode.None
+      opts.completion = opts.completion or {}
+      opts.completion.completeopt = "menu,menuone,noinsert,noselect"
+
+      opts.mapping = vim.tbl_extend("force", opts.mapping or {}, {
+        ["<Tab>"] = cmp.mapping.select_next_item({ behavior = cmp.SelectBehavior.Select }),
+        ["<S-Tab>"] = cmp.mapping.select_prev_item({ behavior = cmp.SelectBehavior.Select }),
+        ["<CR>"] = cmp.mapping.confirm({ select = false }),
+        ["<Space>"] = cmp.mapping(function(fallback)
+          if cmp.visible() then cmp.close() end
+          fallback()
+        end, { "i", "s" }),
+      })
+
+      return opts
+    end,
+  },
+}
+EOF
+
+# Create formatting.lua
+cat > "$HOME/.config/nvim/lua/plugins/formatting.lua" << 'EOF'
+return {
+  {
+    "stevearc/conform.nvim",
+    opts = {
+      formatters_by_ft = {
+        javascript = { "prettier" },
+        typescript = { "prettier" },
+        javascriptreact = { "prettier" },
+        typescriptreact = { "prettier" },
+        json = { "prettier" },
+        jsonc = { "prettier" },
+        html = { "prettier" },
+        css = { "prettier" },
+        scss = { "prettier" },
+        markdown = { "prettier" },
+        yaml = { "prettier" },
+        lua = { "stylua" },
+        sh = { "shfmt" },
+      },
+      format_on_save = {
+        timeout_ms = 500,
+        lsp_fallback = true,
+      },
+    },
+  },
+}
+EOF
+
+# Create tools.lua
+cat > "$HOME/.config/nvim/lua/plugins/tools.lua" << 'EOF'
+return {
+  {
+    "mason-org/mason.nvim",
+    opts = {
+      ensure_installed = {
+        "prettier", "stylua", "shfmt",
+        "lua-language-server", "html-lsp", "css-lsp",
+        "json-lsp", "bash-language-server", "shellcheck",
+      },
+    },
+  },
+}
+EOF
+
+echo ""
+echo "✅ Fresh minimal Neovim config created!"
+echo ""
+echo "📋 What was installed:"
+echo "  - LazyVim with minimal plugins"
+echo "  - Flexoki dark theme with transparency"
+echo "  - Non-aggressive completion"
+echo "  - Prettier formatting for all languages"
+echo "  - Essential LSPs via Mason"
+echo ""
+echo "🎯 Your custom keybinds:"
+echo "  - Ctrl+S: Save all"
+echo "  - Ctrl+A: Select all"
+echo "  - Ctrl+C/V: System clipboard"
+echo "  - <leader>bm: Toggle modifiable"
+echo "  - <leader>uw: Toggle word wrap"
+echo "  - <leader>ul: Toggle whitespace"
+echo ""
+echo "📦 Backups:"
+echo "  - Full backup: $BACKUP_DIR"
+echo "  - Custom configs: $CUSTOM_BACKUP_DIR"
+echo ""
+echo "🚀 Launch Neovim:"
+echo "  nvim"
+echo ""
+echo "First launch will install all plugins (~1-2 min)"
