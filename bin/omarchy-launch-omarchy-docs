@@ -3,4 +3,4 @@
 # Omarchy Documentation Launcher
 # Follows omarchy-launch-* naming convention
 
-exec /home/zack/.config/omarchy/scripts/omarchy-docs-browser.sh "$@"
+exec ~/.config/omarchy/scripts/omarchy-docs-browser.sh "$@"
