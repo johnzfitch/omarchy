@@ -56,6 +56,15 @@ This fork maintains personal Omarchy customizations while automatically syncing 
 - GTK 4.0: `config/gtk-4.0/gtk.css` (263 lines)
 - GTK 3.0: `config/gtk-3.0/gtk.css` (233 lines)
 
+**Nautilus Search Optimizations** (dconf)
+- Full-text search disabled (`fts-enabled=false`) for speed
+- Search result limit increased to 1000 (vs default ~100)
+- Always show location entry bar for typing paths
+- Detailed date/time format
+- Show "Delete Permanently" and "Create Link" options
+- 1GB thumbnail cache limit
+- To restore: `dconf load /org/gnome/nautilus/preferences/ < config/nautilus-preferences.dconf`
+
 ## Repository Structure
 
 ```
@@ -182,9 +191,11 @@ These configurations will survive all `omarchy-update` operations:
 - All scripts in `config/hypr/scripts/`
 
 ### Nautilus
-- GTK 4.0/3.0 optimizations
-- Compact icon/list views
-- Custom sidebar sizing
+- GTK 4.0/3.0 optimizations (compact views)
+- Search optimizations (disabled FTS, 1000 result limit)
+- Location entry bar always visible
+- Custom sidebar sizing (100px min)
+- Detailed date/time format
 - Environment date format config
 
 ### System
@@ -328,6 +339,9 @@ git log --oneline HEAD..upstream/master | wc -l  # Commits behind
 cd ~/.local/share/omarchy
 git pull origin master
 cp -R config/* ~/.config/
+
+# Restore Nautilus search preferences
+dconf load /org/gnome/nautilus/preferences/ < config/nautilus-preferences.dconf
 ```
 
 ## File Locations Quick Reference

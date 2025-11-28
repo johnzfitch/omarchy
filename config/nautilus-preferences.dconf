@@ -1,0 +1,25 @@
+# Nautilus Preferences - Optimized for Speed and Usability
+#
+# To restore these settings:
+#   dconf load /org/gnome/nautilus/preferences/ < config/nautilus-preferences.dconf
+#
+# Key Improvements:
+# - Disabled full-text search (fts-enabled=false) for faster searches
+# - Increased search result limit to 1000 (from default ~100)
+# - Always show location entry bar for typing paths directly
+# - Detailed date/time format for better file timestamp visibility
+# - List view as default (better for large directories)
+# - Show "Delete Permanently" and "Create Link" options
+# - Increased thumbnail limit to 1GB for better previews
+
+[/]
+always-use-location-entry=true
+date-time-format='detailed'
+default-folder-viewer='list-view'
+fts-enabled=false
+migrated-gtk-settings=true
+search-results-limit=uint32 1000
+show-create-link=true
+show-delete-permanently=true
+show-image-thumbnails='always'
+thumbnail-limit=uint64 1024
