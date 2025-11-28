@@ -1,0 +1,135 @@
+@import "../omarchy/current/theme/waybar.css";
+
+* {
+  background-color: @background;
+  color: @foreground;
+
+  border: none;
+  border-radius: 0;
+  min-height: 0;
+  font-family: 'Hack Nerd Font';
+  font-size: 16px;
+
+  /* Better vertical centering */
+  padding-top: 0px;
+  padding-bottom: 0px;
+}
+
+.modules-left {
+  margin-left: 8px;
+}
+
+.modules-right {
+  margin-right: 8px;
+}
+
+#workspaces button {
+  all: initial;
+  padding: 0 6px;
+  margin: 0 1.5px;
+  min-width: 25px;
+}
+
+#workspaces button.empty {
+  opacity: 0.5;
+}
+
+#cpu,
+#battery,
+#pulseaudio,
+#custom-omarchy,
+#custom-screenrecording-indicator,
+#custom-update,
+#custom-mullvad {
+  min-width: 12px;
+  margin: 0 15px;
+}
+
+#custom-mullvad.connected {
+  color: #a6e3a1;
+}
+
+#custom-mullvad.disconnected {
+  color: #f38ba8;
+}
+
+#custom-mullvad.connecting {
+  color: #fab387;
+}
+
+#custom-stealth-proxy {
+  min-width: 12px;
+  margin-left: 20px;
+}
+
+#custom-stealth-proxy.proxy-on {
+  color: #a6e3a1;
+}
+
+#custom-stealth-proxy.proxy-off {
+  color: #6c7086;
+}
+
+#custom-stealth-proxy.proxy-audit {
+  color: #fab387;
+}
+
+#tray {
+  margin-right: 20px;
+}
+
+#bluetooth {
+  margin-right: 20px;
+}
+
+#network {
+  margin-right: 20px;
+}
+
+#custom-expand-icon {
+  margin-right: 30px;
+}
+
+#tooltip {
+  padding: 2px;
+}
+
+#custom-update {
+  font-size: 10px;
+}
+
+#clock {
+  margin-left: 20px;
+  margin-right: 50px;
+  font-size: 16px;
+  font-weight: 600;
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+
+.hidden {
+  opacity: 0;
+}
+
+#custom-screenrecording-indicator {
+  min-width: 12px;
+  margin-left: 8.75px;
+  font-size: 10px;
+}
+
+#custom-screenrecording-indicator.active {
+  color: #a55555;
+}
+
+#custom-feed-ticker {
+  margin: 0 12px;
+  font-size: 16px;
+
+  /* Vertical centering */
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+
+#custom-feed-ticker:hover {
+  text-decoration: underline;
+}
