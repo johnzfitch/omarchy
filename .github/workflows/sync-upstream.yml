@@ -40,10 +40,10 @@ jobs:
 
           if [ "$BEHIND" -eq 0 ]; then
             echo "status=up-to-date" >> $GITHUB_OUTPUT
-            echo "✓ Fork is up to date with upstream"
+            echo "[OK] Fork is up to date with upstream"
           else
             echo "status=updates-available" >> $GITHUB_OUTPUT
-            echo "⚠ Fork is $BEHIND commits behind upstream"
+            echo "[WARN] Fork is $BEHIND commits behind upstream"
           fi
 
       - name: Attempt merge
@@ -54,10 +54,10 @@ jobs:
           # Attempt to merge upstream
           if git merge upstream/master --no-edit; then
             echo "result=success" >> $GITHUB_OUTPUT
-            echo "✓ Successfully merged upstream changes"
+            echo "[OK] Successfully merged upstream changes"
           else
             echo "result=conflict" >> $GITHUB_OUTPUT
-            echo "✗ Merge conflicts detected"
+            echo "[ERROR] Merge conflicts detected"
 
             # Get list of conflicted files
             CONFLICTS=$(git diff --name-only --diff-filter=U)
@@ -74,7 +74,7 @@ jobs:
         if: steps.merge.outputs.result == 'success'
         run: |
           git push origin master
-          echo "✓ Pushed merge to origin/master"
+          echo "[OK] Pushed merge to origin/master"
 
       - name: Create issue for merge conflicts
         if: steps.merge.outputs.result == 'conflict'
@@ -101,7 +101,7 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: issues.data[0].number,
-                body: '## 🔄 New Upstream Sync Attempt Failed\n\n**Date**: ' + new Date().toISOString() + '\n**Commits Behind**: ' + commitsBehind + '\n\n**Conflicted Files**:\n```\n' + conflicts + '\n```'
+                body: '## New Upstream Sync Attempt Failed\n\n**Date**: ' + new Date().toISOString() + '\n**Commits Behind**: ' + commitsBehind + '\n\n**Conflicted Files**:\n```\n' + conflicts + '\n```'
               });
             } else {
               console.log('Creating new conflict issue...');
@@ -166,7 +166,7 @@ jobs:
               await github.rest.issues.create({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                title: '🚨 Upstream Sync Conflicts - @claude Help Needed',
+                title: 'Upstream Sync Conflicts - @claude Help Needed',
                 labels: ['upstream-sync-conflict', 'help-wanted'],
                 body: issueBody
               });
@@ -184,16 +184,16 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
 
           if [ "$CHECK_STATUS" == "up-to-date" ]; then
-            echo "✓ Fork is up to date with upstream" >> $GITHUB_STEP_SUMMARY
+            echo "[OK] Fork is up to date with upstream" >> $GITHUB_STEP_SUMMARY
           elif [ "$MERGE_RESULT" == "success" ]; then
-            echo "✓ Successfully merged $COMMITS_BEHIND commits from upstream" >> $GITHUB_STEP_SUMMARY
+            echo "[OK] Successfully merged $COMMITS_BEHIND commits from upstream" >> $GITHUB_STEP_SUMMARY
           elif [ "$MERGE_RESULT" == "conflict" ]; then
-            echo "✗ Merge conflicts detected in $COMMITS_BEHIND commits" >> $GITHUB_STEP_SUMMARY
+            echo "[ERROR] Merge conflicts detected in $COMMITS_BEHIND commits" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**Conflicted Files**:" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
             echo "$CONFLICTS" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "📋 Issue created for manual resolution" >> $GITHUB_STEP_SUMMARY
+            echo "[INFO] Issue created for manual resolution" >> $GITHUB_STEP_SUMMARY
           fi
