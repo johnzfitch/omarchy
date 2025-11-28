@@ -65,6 +65,20 @@ This fork maintains personal Omarchy customizations while automatically syncing 
 - 1GB thumbnail cache limit
 - To restore: `dconf load /org/gnome/nautilus/preferences/ < config/nautilus-preferences.dconf`
 
+**Custom Nautilus Fork** (~/dev/nautilus-fork)
+- Custom build: GNOME Nautilus 50.alpha
+- Installed to: `/usr/local/bin/nautilus`
+- Built from feature/animated-webp-thumbnails branch
+- **Nov 25 improvements:**
+  - Configurable search result limiting (prevents resource exhaustion)
+  - FUSE mount stale detection (prevents hanging on disconnected SSHFS)
+  - Use-after-free crash fixes (async thumbnail operations)
+  - Location shadow UI fixes (no duplicate path labels)
+- **Nov 21 improvements:**
+  - Search-cache integration (sub-millisecond search for 500k+ files)
+  - Location shadow in list view (shows parent directory path)
+- Repository: Personal fork, not in omarchy repo (source code changes)
+
 ## Repository Structure
 
 ```
@@ -299,6 +313,35 @@ gh repo edit johnzfitch/omarchy --enable-issues
 cat ~/dev/omarchy-base/.github/workflows/sync-upstream.yml
 ```
 
+### Custom Nautilus Build Issues
+
+**Check which Nautilus is running:**
+```bash
+which nautilus
+# Should show: /usr/local/bin/nautilus
+
+nautilus --version
+# Should show: GNOME nautilus 50.alpha
+```
+
+**Rebuild custom Nautilus:**
+```bash
+cd ~/dev/nautilus-fork
+ninja -C build
+sudo -A ninja -C build install
+```
+
+**Search hanging on SSHFS mounts:**
+- Custom build includes FUSE mount detection with 1-second timeout
+- Unresponsive mounts automatically skipped during search
+- Check mount status: `mount | grep fuse`
+- Remount if needed: `remount-cpanel-servers`
+
+**Search results limited to 1000:**
+- Configurable via Preferences → Performance → Search Results Limit
+- Or via dconf: `gsettings set org.gnome.nautilus.preferences search-results-limit 2000`
+- Set to 0 for unlimited (not recommended for large directories)
+
 ## Key Commands Reference
 
 ### Update System
@@ -360,6 +403,12 @@ dconf load /org/gnome/nautilus/preferences/ < config/nautilus-preferences.dconf
 - **cPanel mount scripts:** `~/.local/bin/mount-cpanel-*`
 - **SSH config:** `~/.ssh/config`
 - **SSHFS autostart:** `~/.config/autostart/sshfs-mounts.desktop`
+
+### Custom Nautilus Fork (Local Only)
+- **Nautilus fork:** `~/dev/nautilus-fork/`
+- **Custom binary:** `/usr/local/bin/nautilus` (Nautilus 50.alpha)
+- **Build directory:** `~/dev/nautilus-fork/build/`
+- **Branch:** feature/animated-webp-thumbnails
 
 ## GitHub Actions Workflow
 
@@ -457,12 +506,23 @@ git push origin master
 
 ## Version History
 
-- **2025-11-27:** Initial setup with automated upstream sync
+- **2025-11-27:** Omarchy fork setup and Nautilus search optimization
   - Fixed AUR corruption (yay -Slqa workaround)
   - Added 2,628 lines of customizations
   - Configured GitHub Actions workflow
   - Merged 188 upstream commits
   - Enabled GitHub Issues for conflict notifications
+  - Added Nautilus search preferences (fts-enabled=false, 1000 result limit)
+
+- **2025-11-25:** Custom Nautilus fork improvements (~/dev/nautilus-fork)
+  - Configurable search result limiting (prevents resource exhaustion)
+  - FUSE mount stale detection (1s timeout, prevents SSHFS hangs)
+  - Use-after-free crash fixes (async thumbnail operations)
+  - Location shadow UI refinements
+
+- **2025-11-21:** Custom Nautilus fork - search-cache integration
+  - Search-cache provider (sub-millisecond search for 500k+ files)
+  - Location shadow in list view (parent directory path display)
 
 ---
 
