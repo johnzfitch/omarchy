@@ -106,59 +106,62 @@ jobs:
             } else {
               console.log('Creating new conflict issue...');
               const conflictList = conflicts.split('\n').filter(f => f).map(f => '- `' + f + '`').join('\n');
-              const issueBody = `## Merge Conflicts Detected
 
-The automated sync from upstream [basecamp/omarchy](https://github.com/basecamp/omarchy) encountered merge conflicts.
-
-**Commits Behind**: ${commitsBehind}
-
-**Conflicted Files**:
-\`\`\`
-${conflicts}
-\`\`\`
-
-## How to Resolve
-
-### Option 1: Use Claude Code (Recommended)
-
-1. Open this repo in Claude Code
-2. Run:
-   \`\`\`bash
-   cd ~/dev/omarchy-base
-   git fetch upstream
-   git merge upstream/master
-   \`\`\`
-3. Ask Claude to resolve the conflicts while preserving your customizations
-4. After Claude resolves, commit and push:
-   \`\`\`bash
-   git add .
-   git commit -m "Resolve upstream merge conflicts"
-   git push origin master
-   \`\`\`
-
-### Option 2: Manual Resolution
-
-\`\`\`bash
-cd ~/dev/omarchy-base
-git fetch upstream
-git merge upstream/master
-# Manually resolve conflicts in the files listed above
-git add .
-git commit -m "Resolve upstream merge conflicts"
-git push origin master
-\`\`\`
-
-## Files in Conflict
-
-The following files have conflicting changes between your fork and upstream:
-
-${conflictList}
-
----
-
-**@claude** - Please help resolve these merge conflicts while preserving the custom configurations in this fork.
-
-Close this issue once conflicts are resolved and changes are pushed.`;
+              const issueBody = [
+                '## Merge Conflicts Detected',
+                '',
+                'The automated sync from upstream [basecamp/omarchy](https://github.com/basecamp/omarchy) encountered merge conflicts.',
+                '',
+                '**Commits Behind**: ' + commitsBehind,
+                '',
+                '**Conflicted Files**:',
+                '```',
+                conflicts,
+                '```',
+                '',
+                '## How to Resolve',
+                '',
+                '### Option 1: Use Claude Code (Recommended)',
+                '',
+                '1. Open this repo in Claude Code',
+                '2. Run:',
+                '   ```bash',
+                '   cd ~/dev/omarchy-base',
+                '   git fetch upstream',
+                '   git merge upstream/master',
+                '   ```',
+                '3. Ask Claude to resolve the conflicts while preserving your customizations',
+                '4. After Claude resolves, commit and push:',
+                '   ```bash',
+                '   git add .',
+                '   git commit -m "Resolve upstream merge conflicts"',
+                '   git push origin master',
+                '   ```',
+                '',
+                '### Option 2: Manual Resolution',
+                '',
+                '```bash',
+                'cd ~/dev/omarchy-base',
+                'git fetch upstream',
+                'git merge upstream/master',
+                '# Manually resolve conflicts in the files listed above',
+                'git add .',
+                'git commit -m "Resolve upstream merge conflicts"',
+                'git push origin master',
+                '```',
+                '',
+                '## Files in Conflict',
+                '',
+                'The following files have conflicting changes between your fork and upstream:',
+                '',
+                conflictList,
+                '',
+                '---',
+                '',
+                '**@claude** - Please help resolve these merge conflicts while preserving the custom configurations in this fork.',
+                '',
+                'Close this issue once conflicts are resolved and changes are pushed.'
+              ].join('\n');
 
               await github.rest.issues.create({
                 owner: context.repo.owner,
