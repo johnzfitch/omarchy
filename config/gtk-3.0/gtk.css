@@ -1,0 +1,233 @@
+/**
+ * Omarchy Nautilus Column Optimization v2
+ *
+ * Optimizes Nautilus list view for maximum information density:
+ * - Compact font size for fitting more content
+ * - Name column expands to show full filenames
+ * - Other columns are very compact
+ * - Tight spacing for efficient use of space
+ */
+
+/* Nautilus columnview - reduce font size for better density */
+.nautilus-window .nautilus-list-view columnview {
+  font-size: 0.85em;  /* 85% of normal size for more compact display */
+}
+
+/* Nautilus columnview styling */
+columnview {
+  padding: 0;
+}
+
+columnview > header {
+  border-bottom: 1px solid alpha(currentColor, 0.1);
+  padding: 2px 0;  /* Tighter header padding */
+}
+
+/* Column header styling - make columns very compact */
+columnview > header > button {
+  /* Standard column headers - very tight */
+  min-width: 50px;
+  padding-left: 6px;
+  padding-right: 6px;
+  font-size: 0.9em;  /* Slightly smaller headers */
+}
+
+columnview > header > button:first-child {
+  /* Name column header - gets more space */
+  min-width: 200px;
+  padding-left: 12px;
+}
+
+/* Tight row cell spacing */
+columnview cell {
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+
+/* Name column cells - ensure text doesn't clip but keep reasonable */
+columnview cell:first-child {
+  padding-left: 12px;
+  padding-right: 8px;
+  min-width: 200px;  /* Generous but not excessive */
+}
+
+/* Other column cells - very compact for Size/Type/Modified */
+columnview cell:not(:first-child) {
+  padding-left: 4px;
+  padding-right: 4px;
+  min-width: 55px;  /* Compact but readable */
+}
+
+/* Modified column - tight for date/time */
+columnview cell:nth-child(4) {
+  min-width: 82px;  /* Fits "Yesterday, 2:12 PM" compressed */
+  padding-left: 3px;
+  padding-right: 3px;
+}
+
+/* Nautilus-specific adjustments for list view */
+.nautilus-window columnview > listview {
+  background-color: inherit;
+}
+
+/* Text is handled by GTK automatically - ellipsizing cannot be controlled via CSS */
+
+/* Type column - tight for "Folder" */
+columnview cell:nth-child(3) {
+  min-width: 45px;  /* Fits "Folder" */
+  padding-left: 3px;
+  padding-right: 3px;
+}
+
+/* Size column - tight for "N items" format */
+columnview cell:nth-child(2) {
+  min-width: 48px;  /* Fits "5 items" */
+  padding-left: 3px;
+  padding-right: 3px;
+}
+
+/* Created column - same as Modified */
+columnview cell:nth-child(5) {
+  min-width: 82px;  /* Fits date/time */
+  padding-left: 3px;
+  padding-right: 3px;
+}
+
+/* Hide eject/unmount buttons in Nautilus sidebar ONLY */
+window.nautilus-window .sidebar-row button.sidebar-button {
+  opacity: 0;
+  min-width: 0px;
+  min-height: 0px;
+  padding: 0;
+  margin: 0;
+}
+
+/* Alternative selector for Nautilus places sidebar */
+window.nautilus-window placessidebar button.sidebar-button {
+  opacity: 0;
+  min-width: 0px;
+  min-height: 0px;
+  padding: 0;
+  margin: 0;
+}
+
+/* Compact sidebar for better tiling in Hyprland */
+
+/* Force narrow sidebar */
+placessidebar {
+  min-width: 100px;
+  font-size: 10px;
+}
+
+placessidebar list {
+  padding: 0px;
+}
+
+placessidebar row {
+  padding: 1px 3px;
+  min-height: 22px;
+  font-size: 10px;
+}
+
+placessidebar row label {
+  font-size: 10px;
+  padding-left: 2px;
+}
+
+placessidebar row image {
+  min-width: 12px;
+  min-height: 12px;
+  padding-right: 3px;
+}
+
+/* Thin separator */
+paned > separator {
+  min-width: 1px;
+}
+
+/**
+ * Ultra-compact icon view for maximum density
+ * Reduces thumbnail size and padding beyond default slider limits
+ * Stable sizing prevents jumping during scroll
+ */
+
+/* Icon view grid - compact but stable spacing */
+.nautilus-window gridview {
+  padding: 3px;
+}
+
+.nautilus-window gridview > child {
+  padding: 2px;
+  margin: 2px;
+  /* Fixed dimensions for scroll stability */
+  min-width: 64px;
+  min-height: 72px;
+}
+
+/* Icon view items - compact layout */
+.nautilus-window .icon-item-background {
+  padding: 3px;
+  margin: 0px;
+}
+
+/* Thumbnail/icon size override - smaller than slider allows */
+.nautilus-window gridview image {
+  min-width: 48px;
+  min-height: 48px;
+}
+
+/* Icon labels - smaller font and tighter spacing */
+.nautilus-window gridview label {
+  font-size: 9px;
+  padding: 1px 2px;
+  margin-top: 2px;
+}
+
+/* Canvas item spacing */
+.nautilus-window iconview {
+  padding: 2px;
+}
+
+/* Additional icon view compacting */
+.nautilus-window .icon-ui-labels-box {
+  padding: 1px;
+  margin: 0px;
+}
+
+/**
+ * Optional: Hide sidebar completely for full-width view
+ * Uncomment the section below to enable sidebar-free mode
+ * Use F9 or Ctrl+H to toggle sidebar visibility
+ */
+
+/*
+.nautilus-window flap,
+.nautilus-window flap > revealer,
+.nautilus-window placessidebar {
+  min-width: 0px;
+  opacity: 0;
+}
+*/
+
+/**
+ * Enhanced pathbar for bottom navigation workflow
+ * Makes the location/path bar more prominent and usable
+ */
+
+/* Pathbar enhancements - bigger, clearer navigation */
+.nautilus-window .path-bar {
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+.nautilus-window .path-bar button {
+  padding: 6px 10px;
+  margin: 1px;
+  font-size: 11px;
+  min-height: 28px;
+}
+
+.nautilus-window .path-bar button label {
+  font-size: 11px;
+}
+

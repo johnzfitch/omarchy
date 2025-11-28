@@ -1,0 +1,263 @@
+/**
+ * Omarchy Nautilus Column Optimization v3 (GTK4 safe)
+ *
+ * Goal:
+ * - Extreme info density for Nautilus list and grid view
+ * - Narrow sidebar for tiling workflows
+ * - Small, readable font sizes
+ * - Stable icon grid sizing
+ *
+ * Notes:
+ * - Removed unsupported properties (max-width, max-height)
+ * - Replaced alpha(currentColor, X) with rgba(...) constants
+ * - Ensured all numeric values have units
+ * - Cleaned padding/margin syntax
+ */
+
+/* Nautilus list view: smaller font for high density */
+.nautilus-window .nautilus-list-view columnview {
+  font-size: 0.85em;
+}
+
+/* Columnview base layout */
+columnview {
+  padding: 0;
+}
+
+/* Column headers: thin divider and tight padding */
+columnview > header {
+  /* GTK4 doesn't understand alpha(currentColor, 0.1)
+     so we approximate a subtle divider with low alpha gray */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 2px 0;
+}
+
+/* Generic column header buttons: compact, even spacing */
+columnview > header > button {
+  min-width: 50px;
+  padding-left: 6px;
+  padding-right: 6px;
+  font-size: 0.9em;
+}
+
+/* Name column header gets more runway so filenames aren't crushed */
+columnview > header > button:first-child {
+  min-width: 200px;
+  padding-left: 12px;
+}
+
+/* Row cells: reduce vertical padding for density */
+columnview cell {
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+
+/* First column (Name): keep readable, leave breathing room */
+columnview cell:first-child {
+  padding-left: 12px;
+  padding-right: 8px;
+  min-width: 200px;
+}
+
+/* All non-name columns: make them tight */
+columnview cell:not(:first-child) {
+  padding-left: 4px;
+  padding-right: 4px;
+  min-width: 55px;
+}
+
+/* Size column (2nd col): just enough room for "5 items" etc */
+columnview cell:nth-child(2) {
+  min-width: 48px;
+  padding-left: 3px;
+  padding-right: 3px;
+}
+
+/* Type column (3rd col): small word like "Folder" fits */
+columnview cell:nth-child(3) {
+  min-width: 45px;
+  padding-left: 3px;
+  padding-right: 3px;
+}
+
+/* Modified column (4th col): timestamp space */
+columnview cell:nth-child(4) {
+  min-width: 82px;
+  padding-left: 3px;
+  padding-right: 3px;
+}
+
+/* Created column (5th col): mirror Modified column */
+columnview cell:nth-child(5) {
+  min-width: 82px;
+  padding-left: 3px;
+  padding-right: 3px;
+}
+
+/* Make sure listview inherits bg, avoid double backgrounds */
+.nautilus-window columnview > listview {
+  background-color: inherit;
+}
+
+/* Hide eject / unmount buttons in the Nautilus sidebar only
+   This keeps the sidebar visually clean in tiling layouts */
+window.nautilus-window .sidebar-row button.sidebar-button {
+  opacity: 0;
+  min-width: 0px;
+  min-height: 0px;
+  padding: 0px;
+  margin: 0px;
+}
+
+/* Alternate selector for places sidebar */
+window.nautilus-window placessidebar button.sidebar-button {
+  opacity: 0;
+  min-width: 0px;
+  min-height: 0px;
+  padding: 0px;
+  margin: 0px;
+}
+
+/* Sidebar compression for Hyprland tile life */
+placessidebar {
+  min-width: 100px;
+  font-size: 10px;
+}
+
+placessidebar list {
+  padding: 0px;
+}
+
+placessidebar row {
+  padding: 1px 3px;
+  min-height: 22px;
+  font-size: 10px;
+}
+
+placessidebar row label {
+  font-size: 10px;
+  padding-left: 2px;
+}
+
+placessidebar row image {
+  min-width: 12px;
+  min-height: 12px;
+  padding-right: 3px;
+}
+
+/* Very thin vertical splitter between sidebar and main pane */
+paned > separator {
+  min-width: 1px;
+}
+
+/* ============================
+ * ICON / GRID VIEW DENSITY
+ * ============================
+ *
+ * Goal: stable grid sizing so scrolling doesn't "jump"
+ * and smaller thumbnails than the default GTK slider allows
+ */
+
+/* Grid view container: minimal padding */
+.nautilus-window gridview {
+  padding: 3px;
+}
+
+/* Each icon item "slot" in grid */
+.nautilus-window gridview > child {
+  padding: 2px;
+  margin: 2px;
+
+  /* Fixed footprint for each icon tile.
+     We removed max-width/max-height which GTK will complain about.
+     min-width/min-height is allowed. */
+  min-width: 64px;
+  min-height: 72px;
+}
+
+/* Inner background box for icon items */
+.nautilus-window .icon-item-background {
+  padding: 3px;
+  margin: 0px;
+}
+
+/* Thumbnail sizing: force 48px square thumbnails */
+.nautilus-window gridview image {
+  min-width: 48px;
+  min-height: 48px;
+  /* max-width / max-height are not valid in GTK CSS, so we drop them */
+}
+
+/* Labels under icons: tiny text, tight leading */
+.nautilus-window gridview label {
+  font-size: 9px;
+  padding: 1px 2px;
+  margin-top: 2px;
+}
+
+/* Canvas item spacing for icon mode */
+.nautilus-window iconview {
+  padding: 2px;
+}
+
+/* Extra tightening around icon label group */
+.nautilus-window .icon-ui-labels-box {
+  padding: 1px;
+  margin: 0px;
+}
+
+/* ============================
+ * OPTIONAL SIDEBAR HIDING
+ * ============================
+ *
+ * You can uncomment this block to get a "full bleed" file view.
+ * Leave it commented by default so we don't break discoverability.
+ */
+
+/*
+.nautilus-window flap,
+.nautilus-window flap > revealer,
+.nautilus-window placessidebar {
+  min-width: 0px;
+  opacity: 0;
+}
+*/
+
+/* ============================
+ * PATH BAR / LOCATION BAR
+ * ============================
+ *
+ * Goal: if you're running the path bar along bottom or in a cramped tiling slot,
+ * make it finger friendly and readable without wasting vertical space elsewhere.
+ */
+
+.nautilus-window .path-bar {
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+.nautilus-window .path-bar button {
+  padding: 6px 10px;
+  margin: 1px;
+  font-size: 11px;
+  min-height: 28px;
+}
+
+.nautilus-window .path-bar button label {
+  font-size: 11px;
+}
+
+/* ============================
+ * LOCATION SHADOW (OMARCHY)
+ * ============================
+ *
+ * Shows file's full path nested under filename at 60% opacity
+ * For extra long paths: .../dev/lib/omarchy-wiki
+ */
+
+.nautilus-window .location-shadow {
+  opacity: 0.6;
+  font-size: 0.8em;
+  margin-top: -1px;
+  padding: 0;
+}
