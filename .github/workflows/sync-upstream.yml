@@ -101,16 +101,12 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: issues.data[0].number,
-                body: `## 🔄 New Upstream Sync Attempt Failed\n\n**Date**: ${new Date().toISOString()}\n**Commits Behind**: ${commitsBehind}\n\n**Conflicted Files**:\n\`\`\`\n${conflicts}\n\`\`\``
+                body: '## 🔄 New Upstream Sync Attempt Failed\n\n**Date**: ' + new Date().toISOString() + '\n**Commits Behind**: ' + commitsBehind + '\n\n**Conflicted Files**:\n```\n' + conflicts + '\n```'
               });
             } else {
               console.log('Creating new conflict issue...');
-              await github.rest.issues.create({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                title: '🚨 Upstream Sync Conflicts - @claude Help Needed',
-                labels: ['upstream-sync-conflict', 'help-wanted'],
-                body: `## Merge Conflicts Detected
+              const conflictList = conflicts.split('\n').filter(f => f).map(f => '- `' + f + '`').join('\n');
+              const issueBody = `## Merge Conflicts Detected
 
 The automated sync from upstream [basecamp/omarchy](https://github.com/basecamp/omarchy) encountered merge conflicts.
 
@@ -156,13 +152,20 @@ git push origin master
 
 The following files have conflicting changes between your fork and upstream:
 
-${conflicts.split('\n').map(f => \`- \\\`${f}\\\`\`).join('\n')}
+${conflictList}
 
 ---
 
 **@claude** - Please help resolve these merge conflicts while preserving the custom configurations in this fork.
 
-Close this issue once conflicts are resolved and changes are pushed.`
+Close this issue once conflicts are resolved and changes are pushed.`;
+
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '🚨 Upstream Sync Conflicts - @claude Help Needed',
+                labels: ['upstream-sync-conflict', 'help-wanted'],
+                body: issueBody
               });
             }
 
