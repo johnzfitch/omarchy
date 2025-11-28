@@ -1,10 +1,16 @@
 #!/bin/bash
 
 omarchy-cmd-present "$EDITOR" || EDITOR=nvim
+TERMINAL="${TERMINAL:-ghostty}"
 
 case "$EDITOR" in
 nvim | vim | nano | micro | hx | helix)
-  exec setsid uwsm-app -- xdg-terminal-exec "$EDITOR" "$@"
+  # Launch terminal with specific title for window identification
+  setsid uwsm-app -- "$TERMINAL" --title="📝 Config Editor" -e "$EDITOR" "$@" &
+
+  # Wait briefly for window to appear, then find and tag it by title
+  sleep 0.2
+  hyprctl dispatch tagwindow +ghostty-editor title:^📝 >/dev/null 2>&1
   ;;
 *)
   exec setsid uwsm-app -- "$EDITOR" "$@"

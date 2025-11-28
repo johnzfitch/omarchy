@@ -14,7 +14,10 @@ fzf_args=(
   --color 'pointer:green,marker:green'
 )
 
-pkg_names=$(yay -Slqa | fzf "${fzf_args[@]}")
+# Workaround: yay -Slqa is broken in omarchy's yay package
+# Fetch AUR package list from aurweb.archlinux.org
+echo "Fetching AUR package list..."
+pkg_names=$(curl -s 'https://aur.archlinux.org/packages.gz' | gzip -d | tail -n +2 | fzf "${fzf_args[@]}")
 
 if [[ -n "$pkg_names" ]]; then
   # Convert newline-separated selections to space-separated for yay
