@@ -1,0 +1,251 @@
+#!/bin/bash
+#
+# nautilus-omarchy-update - Update Nautilus Omarchy from GitHub releases
+#
+# This script downloads and installs the latest nautilus-omarchy package
+# from the GitHub releases page.
+#
+
+set -e
+
+REPO="johnzfitch/nautilus-fork"
+PKG_NAME="nautilus-omarchy"
+CACHE_DIR="$HOME/.cache/nautilus-omarchy"
+CURRENT_VERSION_FILE="$CACHE_DIR/current-version"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
+log_success() { echo -e "${GREEN}[OK]${NC} $1"; }
+log_warn() { echo -e "${YELLOW}[WARN]${NC} $1" >&2; }
+log_error() { echo -e "${RED}[ERROR]${NC} $1" >&2; }
+
+# Ensure cache directory exists
+mkdir -p "$CACHE_DIR"
+
+# Get current installed version
+get_current_version() {
+    if [[ -f "$CURRENT_VERSION_FILE" ]]; then
+        cat "$CURRENT_VERSION_FILE"
+    else
+        echo "none"
+    fi
+}
+
+# Get latest release info from GitHub API
+get_latest_release() {
+    curl -s "https://api.github.com/repos/$REPO/releases/latest" 2>/dev/null
+}
+
+# Get latest pre-release (for alpha/beta versions)
+get_latest_prerelease() {
+    curl -s "https://api.github.com/repos/$REPO/releases" 2>/dev/null | \
+        jq -r '.[0]' 2>/dev/null
+}
+
+# Check for updates - sets global variables: CURRENT_VERSION, LATEST_VERSION, RELEASE_INFO
+check_update() {
+    CURRENT_VERSION=$(get_current_version)
+
+    # Try latest release first, fall back to pre-release
+    RELEASE_INFO=$(get_latest_release)
+    if [[ -z "$RELEASE_INFO" ]] || [[ "$RELEASE_INFO" == "null" ]] || ! echo "$RELEASE_INFO" | jq -e '.tag_name' >/dev/null 2>&1; then
+        RELEASE_INFO=$(get_latest_prerelease)
+    fi
+
+    if [[ -z "$RELEASE_INFO" ]] || [[ "$RELEASE_INFO" == "null" ]]; then
+        log_error "Could not fetch release info from GitHub"
+        return 1
+    fi
+
+    LATEST_VERSION=$(echo "$RELEASE_INFO" | jq -r '.tag_name' | sed 's/^v//')
+}
+
+# Download and install package
+install_package() {
+    local release_info="$1"
+    local version="$2"
+
+    # Find the .pkg.tar.zst asset
+    local pkg_url
+    pkg_url=$(echo "$release_info" | jq -r '.assets[] | select(.name | endswith(".pkg.tar.zst")) | .browser_download_url' | head -1)
+
+    if [[ -z "$pkg_url" ]] || [[ "$pkg_url" == "null" ]]; then
+        # Fall back to tarball asset
+        pkg_url=$(echo "$release_info" | jq -r '.assets[] | select(.name | endswith(".tar.gz")) | .browser_download_url' | head -1)
+    fi
+
+    if [[ -z "$pkg_url" ]] || [[ "$pkg_url" == "null" ]]; then
+        # No downloadable assets - this is a source-only release
+        # Check if local source exists and offer to build
+        local source_dir="$HOME/dev/nautilus-fork"
+        if [[ -d "$source_dir" ]]; then
+            log_info "No pre-built package available. Building from local source..."
+            build_local
+            return $?
+        else
+            log_warn "No pre-built package available and no local source found."
+            log_info "To install, clone the repo to ~/dev/nautilus-fork and run: nautilus-omarchy-update build"
+            # Still update version tracking to prevent repeated checks
+            echo "$version" > "$CURRENT_VERSION_FILE"
+            return 0
+        fi
+    fi
+
+    log_info "Downloading nautilus-omarchy $version..."
+
+    if [[ "$pkg_url" == *".pkg.tar.zst" ]]; then
+        # Download and install .pkg.tar.zst
+        local pkg_file="$CACHE_DIR/nautilus-omarchy-$version.pkg.tar.zst"
+        curl -L -o "$pkg_file" "$pkg_url"
+
+        log_info "Installing package (requires sudo)..."
+        sudo pacman -U --noconfirm "$pkg_file"
+    else
+        # Download and extract tarball
+        local tarball="$CACHE_DIR/nautilus-omarchy-$version.tar.gz"
+        curl -L -o "$tarball" "$pkg_url"
+
+        log_info "Extracting tarball..."
+        tar -xzf "$tarball" -C "$CACHE_DIR"
+
+        log_info "Installing files (requires sudo)..."
+        sudo cp -r "$CACHE_DIR"/nautilus-omarchy-*/usr/* /usr/
+    fi
+
+    # Save current version
+    echo "$version" > "$CURRENT_VERSION_FILE"
+
+    log_success "Installed nautilus-omarchy $version"
+}
+
+# Restart Nautilus
+restart_nautilus() {
+    log_info "Restarting Nautilus..."
+    nautilus -q 2>/dev/null || true
+    sleep 1
+    log_success "Nautilus restarted"
+}
+
+# Main update function
+do_update() {
+    local force="${1:-false}"
+
+    log_info "Checking for nautilus-omarchy updates..."
+
+    check_update || exit 1
+
+    log_info "Current version: $CURRENT_VERSION"
+    log_info "Latest version:  $LATEST_VERSION"
+
+    if [[ "$CURRENT_VERSION" == "$LATEST_VERSION" ]] && [[ "$force" != "true" ]]; then
+        log_success "Already up to date!"
+        return 0
+    fi
+
+    if [[ "$CURRENT_VERSION" == "none" ]]; then
+        log_info "First-time installation of nautilus-omarchy"
+    else
+        log_info "Upgrading from $CURRENT_VERSION to $LATEST_VERSION"
+    fi
+
+    install_package "$RELEASE_INFO" "$LATEST_VERSION"
+    restart_nautilus
+
+    log_success "Update complete!"
+}
+
+# Show current status
+show_status() {
+    local current_version
+    current_version=$(get_current_version)
+
+    echo "Nautilus Omarchy Status"
+    echo "======================="
+    echo "Current version: $current_version"
+    echo "Cache directory: $CACHE_DIR"
+    echo "GitHub repo:     https://github.com/$REPO"
+
+    if command -v nautilus &>/dev/null; then
+        echo "Nautilus path:   $(which nautilus)"
+        echo "Nautilus binary: $(nautilus --version 2>/dev/null || echo 'unknown')"
+    fi
+}
+
+# Build from source
+build_local() {
+    local source_dir="$HOME/dev/nautilus-fork"
+
+    if [[ ! -d "$source_dir" ]]; then
+        log_error "Source directory not found: $source_dir"
+        exit 1
+    fi
+
+    log_info "Building from local source..."
+    cd "$source_dir"
+
+    ninja -C build || {
+        log_warn "Build directory not configured, running meson setup..."
+        meson setup build --prefix=/usr --buildtype=release
+        ninja -C build
+    }
+
+    log_info "Installing (requires sudo)..."
+    sudo ninja -C build install
+
+    # Save version based on git
+    local version="local.$(date +%Y%m%d).$(git rev-parse --short HEAD)"
+    echo "$version" > "$CURRENT_VERSION_FILE"
+
+    restart_nautilus
+    log_success "Built and installed $version from source"
+}
+
+# Usage
+usage() {
+    cat << EOF
+Usage: nautilus-omarchy-update [COMMAND]
+
+Commands:
+  update, -u       Check for and install updates (default)
+  force, -f        Force update even if already up to date
+  status, -s       Show current installation status
+  build, -b        Build and install from local source
+  help, -h         Show this help message
+
+Examples:
+  nautilus-omarchy-update          # Check and update
+  nautilus-omarchy-update force    # Force reinstall latest
+  nautilus-omarchy-update build    # Build from ~/dev/nautilus-fork
+  nautilus-omarchy-update status   # Show current version
+EOF
+}
+
+# Parse arguments
+case "${1:-update}" in
+    update|-u|"")
+        do_update false
+        ;;
+    force|-f)
+        do_update true
+        ;;
+    status|-s)
+        show_status
+        ;;
+    build|-b)
+        build_local
+        ;;
+    help|-h|--help)
+        usage
+        ;;
+    *)
+        log_error "Unknown command: $1"
+        usage
+        exit 1
+        ;;
+esac
