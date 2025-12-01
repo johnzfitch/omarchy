@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# This hook restores user customizations after Omarchy system updates
+
+BOOKMARKS_FILE="$HOME/.config/gtk-3.0/bookmarks"
+
+# Restore feed@internet bookmark in Nautilus
+FEED_BOOKMARK="file://$HOME/internetuniverse_feed feed@internet"
+if ! grep -q "internetuniverse_feed" "$BOOKMARKS_FILE" 2>/dev/null; then
+    echo "$FEED_BOOKMARK" >> "$BOOKMARKS_FILE"
+fi
+
+# Restore root@internet bookmark
+ROOT_BOOKMARK="file://$HOME/internetuniverse_root root@internet"
+if ! grep -q "internetuniverse_root" "$BOOKMARKS_FILE" 2>/dev/null; then
+    echo "$ROOT_BOOKMARK" >> "$BOOKMARKS_FILE"
+fi
+
+# Set custom icon for feed mount point
+if [ -d "$HOME/internetuniverse_feed" ] && [ -f "$HOME/dev/iconics/catalog/ui/news.png" ]; then
+    {
+        cat > "$HOME/internetuniverse_feed/.directory" <<EOF
+[Desktop Entry]
+Icon=$HOME/dev/iconics/catalog/ui/news.png
+EOF
+    } 2>/dev/null || true
+fi
+
+# Set custom icon for root mount point
+if [ -d "$HOME/internetuniverse_root" ] && [ -f "$HOME/dev/iconics/catalog/ui/home.png" ]; then
+    {
+        cat > "$HOME/internetuniverse_root/.directory" <<EOF
+[Desktop Entry]
+Icon=$HOME/dev/iconics/catalog/ui/home.png
+EOF
+    } 2>/dev/null || true
+fi
+
+# Update Nautilus Omarchy from GitHub releases
+if command -v nautilus-omarchy-update &>/dev/null; then
+    echo -e "\033[0;32mChecking for Nautilus Omarchy updates...\033[0m"
+    nautilus-omarchy-update update || true
+fi
