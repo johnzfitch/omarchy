@@ -20,6 +20,7 @@ default-folder-viewer='list-view'
 fts-enabled=false
 migrated-gtk-settings=true
 search-results-limit=uint32 1000
+search-show-hidden-files=true
 show-create-link=true
 show-delete-permanently=true
 show-hidden-files=true
