@@ -11,6 +11,7 @@
 # - List view as default (better for large directories)
 # - Show "Delete Permanently" and "Create Link" options
 # - Increased thumbnail limit to 1GB for better previews
+# - Show hidden files enabled (dotfiles visible)
 
 [/]
 always-use-location-entry=true
@@ -21,5 +22,6 @@ migrated-gtk-settings=true
 search-results-limit=uint32 1000
 show-create-link=true
 show-delete-permanently=true
+show-hidden-files=true
 show-image-thumbnails='always'
 thumbnail-limit=uint64 1024
